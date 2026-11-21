@@ -3,87 +3,197 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Painel para gestão de atendimentos, SLA e equipes">
   <title>Painel de Atendimentos</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%232563eb%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-size=%2214%22 font-family=%22sans-serif%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22%3EPA%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    // Aplica o tema salvo antes de desenhar a página, para não piscar.
+    try { document.documentElement.dataset.tema = localStorage.getItem("tema") || "claro"; } catch {}
+  </script>
 </head>
 <body>
   <header class="topo">
-    <div>
-      <h1>Painel de Atendimentos</h1>
-      <p class="sub">Controle de agendamentos, pendências e indicadores do mês</p>
+    <div class="marca">
+      <span class="logo">PA</span>
+      <div>
+        <strong>Painel de Atendimentos</strong>
+        <small>Gestão de agendamentos, SLA e equipes</small>
+      </div>
     </div>
+
+    <nav class="menu" aria-label="Seções">
+      <a href="#/dashboard" data-rota="dashboard">Dashboard</a>
+      <a href="#/atendimentos" data-rota="atendimentos">Atendimentos</a>
+      <a href="#/quadro" data-rota="quadro">Quadro</a>
+      <a href="#/equipes" data-rota="equipes">Equipes</a>
+    </nav>
+
     <div class="acoes-topo">
-      <input type="month" id="filtroMes" aria-label="Mês de referência">
-      <button class="btn sec" id="btnExemplo">Carregar exemplo</button>
-      <button class="btn sec" id="btnExportar">Exportar CSV</button>
+      <button class="btn" id="btnNovo" title="Atalho: N">+ Novo atendimento</button>
+      <div class="dropdown">
+        <button class="btn sec" id="btnMais" aria-haspopup="true" aria-expanded="false">Mais ▾</button>
+        <div class="dropdown-menu" id="menuMais" hidden>
+          <button data-acao="exemplo">Carregar dados de exemplo</button>
+          <button data-acao="csv">Exportar mês em CSV</button>
+          <button data-acao="backup">Baixar backup (JSON)</button>
+          <button data-acao="importar">Restaurar backup</button>
+          <hr>
+          <button data-acao="limpar" class="perigo">Apagar todos os dados</button>
+        </div>
+      </div>
+      <button class="btn sec icone" id="btnTema" aria-label="Alternar tema claro/escuro" title="Alternar tema">🌙</button>
     </div>
   </header>
 
   <main>
-    <section class="kpis">
-      <div class="kpi"><span>Recebidos no mês</span><strong id="kpiTotal">0</strong></div>
-      <div class="kpi alerta"><span>Falta agendar</span><strong id="kpiPendentes">0</strong></div>
-      <div class="kpi aviso"><span>Sem equipe</span><strong id="kpiSemEquipe">0</strong></div>
-      <div class="kpi"><span>Agendados</span><strong id="kpiAgendados">0</strong></div>
-      <div class="kpi ok"><span>Concluídos</span><strong id="kpiConcluidos">0</strong></div>
-    </section>
-
-    <section class="grade">
-      <div class="card">
-        <h2>Novo atendimento</h2>
-        <form id="form">
-          <label>Cliente<input name="cliente" required placeholder="Ex.: Cliente A"></label>
-          <label>Serviço<input name="servico" required placeholder="Ex.: Vistoria"></label>
-          <div class="linha">
-            <label>Data<input type="date" name="data" required></label>
-            <label>Hora<input type="time" name="hora"></label>
-          </div>
-          <label>Equipe<input name="equipe" placeholder="Deixe vazio se ainda não tiver"></label>
-          <label>Status
-            <select name="status">
-              <option value="pendente">Falta agendar</option>
-              <option value="agendado">Agendado</option>
-              <option value="concluido">Concluído</option>
-            </select>
-          </label>
-          <button class="btn" type="submit">Adicionar</button>
-        </form>
+    <!-- DASHBOARD -->
+    <section data-view="dashboard">
+      <div class="barra">
+        <h1>Visão do mês</h1>
+        <input type="month" id="filtroMes" aria-label="Mês de referência">
       </div>
 
-      <div class="card">
-        <h2>Atendimentos por dia</h2>
-        <canvas id="grafico" height="220"></canvas>
-        <div id="alertas"></div>
+      <div class="kpis" id="kpis"></div>
+
+      <div class="grade-dash">
+        <article class="card largo">
+          <h2>Atendimentos agendados por dia</h2>
+          <canvas id="grafBarras"></canvas>
+        </article>
+        <article class="card">
+          <h2>Distribuição por status</h2>
+          <canvas id="grafRosca"></canvas>
+          <ul class="legenda" id="legendaRosca"></ul>
+        </article>
+        <article class="card">
+          <h2>Pontos de atenção</h2>
+          <ul class="alertas" id="alertas"></ul>
+        </article>
+        <article class="card">
+          <h2>Clientes com mais atendimentos</h2>
+          <div id="rankClientes"></div>
+        </article>
+        <article class="card">
+          <h2>Ocupação das equipes hoje</h2>
+          <div id="ocupacaoHoje"></div>
+        </article>
       </div>
     </section>
 
-    <section class="card">
-      <div class="cab-lista">
-        <h2>Lista de atendimentos</h2>
+    <!-- LISTA -->
+    <section data-view="atendimentos" hidden>
+      <div class="barra">
+        <h1>Atendimentos</h1>
         <div class="filtros">
-          <input id="busca" placeholder="Buscar cliente ou serviço">
-          <select id="filtroStatus">
-            <option value="">Todos os status</option>
-            <option value="pendente">Falta agendar</option>
-            <option value="sem-equipe">Sem equipe</option>
-            <option value="agendado">Agendado</option>
-            <option value="concluido">Concluído</option>
-          </select>
+          <input type="search" id="fBusca" placeholder="Buscar protocolo, cliente ou serviço">
+          <select id="fStatus"><option value="">Todos os status</option></select>
+          <select id="fPrioridade"><option value="">Todas as prioridades</option></select>
+          <select id="fEquipe"><option value="">Todas as equipes</option></select>
         </div>
       </div>
-      <div class="tabela-wrap">
-        <table>
-          <thead>
-            <tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>Equipe</th><th>Status</th><th></th></tr>
-          </thead>
-          <tbody id="tabela"></tbody>
-        </table>
-        <p id="vazio" class="vazio">Nenhum atendimento encontrado.</p>
+      <div class="card sem-padding">
+        <div class="tabela-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-campo="protocolo">Protocolo</th>
+                <th data-campo="data">Data</th>
+                <th data-campo="cliente">Cliente</th>
+                <th data-campo="servico">Serviço</th>
+                <th data-campo="prioridade">Prioridade</th>
+                <th>Equipe</th>
+                <th data-campo="status">Status</th>
+                <th>SLA</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaCorpo"></tbody>
+          </table>
+          <p class="vazio" id="tabelaVazia" hidden>Nenhum atendimento encontrado com esses filtros.</p>
+        </div>
+        <div class="paginacao" id="paginacao"></div>
+      </div>
+    </section>
+
+    <!-- KANBAN -->
+    <section data-view="quadro" hidden>
+      <div class="barra">
+        <h1>Quadro</h1>
+        <p class="dica">Arraste os cartões entre as colunas para mudar o status.</p>
+      </div>
+      <div class="kanban" id="kanban"></div>
+    </section>
+
+    <!-- EQUIPES -->
+    <section data-view="equipes" hidden>
+      <div class="barra"><h1>Equipes</h1></div>
+      <div class="grade-equipes">
+        <form class="card" id="formEquipe">
+          <h2 id="tituloFormEquipe">Nova equipe</h2>
+          <input type="hidden" name="id">
+          <label>Nome<input name="nome" required maxlength="40"></label>
+          <label>Capacidade por dia<input name="capacidadeDia" type="number" min="1" max="50" value="4" required></label>
+          <div class="linha-botoes">
+            <button class="btn" type="submit">Salvar</button>
+            <button class="btn sec" type="reset">Cancelar</button>
+          </div>
+        </form>
+        <div class="card sem-padding">
+          <table>
+            <thead><tr><th>Equipe</th><th>Capacidade/dia</th><th>Hoje</th><th>Em aberto</th><th></th></tr></thead>
+            <tbody id="listaEquipes"></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </main>
 
-  <footer>Feito por Isaac Raphael · HTML, CSS e JavaScript</footer>
-  <script src="script.js"></script>
+  <!-- MODAL: formulário de atendimento -->
+  <dialog id="modalForm">
+    <form id="formAtendimento" method="dialog" novalidate>
+      <header>
+        <h2 id="tituloForm">Novo atendimento</h2>
+        <button type="button" class="fechar" data-fechar aria-label="Fechar">×</button>
+      </header>
+      <input type="hidden" name="id">
+      <div class="campos">
+        <label>Cliente<input name="cliente" list="listaClientes" maxlength="60"></label>
+        <label>Serviço<input name="servico" maxlength="60"></label>
+        <label>Prioridade<select name="prioridade"></select></label>
+        <label>Equipe<select name="equipeId"></select></label>
+        <label>Data<input type="date" name="data"></label>
+        <label>Hora<input type="time" name="hora"></label>
+        <label class="inteiro">Observações<textarea name="observacoes" rows="3" maxlength="500"></textarea></label>
+      </div>
+      <ul class="mensagens" id="mensagensForm"></ul>
+      <footer>
+        <button type="button" class="btn sec" data-fechar>Cancelar</button>
+        <button type="submit" class="btn">Salvar</button>
+      </footer>
+    </form>
+    <datalist id="listaClientes"></datalist>
+  </dialog>
+
+  <!-- MODAL: detalhes -->
+  <dialog id="modalDetalhe">
+    <div id="conteudoDetalhe"></div>
+  </dialog>
+
+  <!-- MODAL: confirmação -->
+  <dialog id="modalConfirmar">
+    <form method="dialog">
+      <p id="textoConfirmar"></p>
+      <footer>
+        <button value="nao" class="btn sec">Cancelar</button>
+        <button value="sim" class="btn perigo">Confirmar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <input type="file" id="inputImportar" accept="application/json" hidden>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <footer class="rodape">Feito por Isaac Raphael · HTML, CSS e JavaScript (ES Modules)</footer>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
