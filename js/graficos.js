@@ -34,7 +34,7 @@ export function graficoBarras(canvas, valores, { destaque = -1, altura = 220 } =
     ctx.moveTo(margem.esq, y);
     ctx.lineTo(largura, y);
     ctx.stroke();
-    ctx.fillText(Math.round(maximo * f), 2, y + 4);
+    if (f !== 0.5 || maximo >= 2) ctx.fillText(Math.round(maximo * f), 2, y + 4);
   });
 
   valores.forEach((v, i) => {
