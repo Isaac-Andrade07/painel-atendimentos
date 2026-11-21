@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Atendimentos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topo">
+    <div>
+      <h1>Painel de Atendimentos</h1>
+      <p class="sub">Controle de agendamentos, pendências e indicadores do mês</p>
+    </div>
+    <div class="acoes-topo">
+      <input type="month" id="filtroMes" aria-label="Mês de referência">
+      <button class="btn sec" id="btnExemplo">Carregar exemplo</button>
+      <button class="btn sec" id="btnExportar">Exportar CSV</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="kpis">
+      <div class="kpi"><span>Recebidos no mês</span><strong id="kpiTotal">0</strong></div>
+      <div class="kpi alerta"><span>Falta agendar</span><strong id="kpiPendentes">0</strong></div>
+      <div class="kpi aviso"><span>Sem equipe</span><strong id="kpiSemEquipe">0</strong></div>
+      <div class="kpi"><span>Agendados</span><strong id="kpiAgendados">0</strong></div>
+      <div class="kpi ok"><span>Concluídos</span><strong id="kpiConcluidos">0</strong></div>
+    </section>
+
+    <section class="grade">
+      <div class="card">
+        <h2>Novo atendimento</h2>
+        <form id="form">
+          <label>Cliente<input name="cliente" required placeholder="Ex.: Cliente A"></label>
+          <label>Serviço<input name="servico" required placeholder="Ex.: Vistoria"></label>
+          <div class="linha">
+            <label>Data<input type="date" name="data" required></label>
+            <label>Hora<input type="time" name="hora"></label>
+          </div>
+          <label>Equipe<input name="equipe" placeholder="Deixe vazio se ainda não tiver"></label>
+          <label>Status
+            <select name="status">
+              <option value="pendente">Falta agendar</option>
+              <option value="agendado">Agendado</option>
+              <option value="concluido">Concluído</option>
+            </select>
+          </label>
+          <button class="btn" type="submit">Adicionar</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Atendimentos por dia</h2>
+        <canvas id="grafico" height="220"></canvas>
+        <div id="alertas"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cab-lista">
+        <h2>Lista de atendimentos</h2>
+        <div class="filtros">
+          <input id="busca" placeholder="Buscar cliente ou serviço">
+          <select id="filtroStatus">
+            <option value="">Todos os status</option>
+            <option value="pendente">Falta agendar</option>
+            <option value="sem-equipe">Sem equipe</option>
+            <option value="agendado">Agendado</option>
+            <option value="concluido">Concluído</option>
+          </select>
+        </div>
+      </div>
+      <div class="tabela-wrap">
+        <table>
+          <thead>
+            <tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>Equipe</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="tabela"></tbody>
+        </table>
+        <p id="vazio" class="vazio">Nenhum atendimento encontrado.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>Feito por Isaac Raphael · HTML, CSS e JavaScript</footer>
+  <script src="script.js"></script>
+</body>
+</html>
