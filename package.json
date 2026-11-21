@@ -1,0 +1,10 @@
+{
+  "name": "painel-atendimentos",
+  "version": "2.0.0",
+  "description": "Painel web para gestão de atendimentos, SLA e equipes",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "author": "Isaac Raphael Oliveira Andrade"
+}
